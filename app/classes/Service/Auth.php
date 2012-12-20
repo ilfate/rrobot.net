@@ -41,9 +41,8 @@ class Service_Auth extends CoreService
     'MainPages' => self::ALL_METHODS_ARE_PUBLIC,
     'Error' => self::ALL_METHODS_ARE_PUBLIC,
     'Auth' => self::ALL_METHODS_ARE_PUBLIC,
-    'Cv' => self::ALL_METHODS_ARE_PUBLIC,
-    'RobotRock' => self::ALL_METHODS_ARE_PUBLIC,
-    'Game_Main' => array('index'),
+    'GameMap' => self::ALL_METHODS_ARE_PUBLIC,
+
   );
   
   public static function preExecute() 

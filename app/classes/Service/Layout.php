@@ -36,7 +36,7 @@ class Service_Layout extends CoreService
     if(Request::getExecutingMode() == Request::EXECUTE_MODE_HTTP)
     {
       $access_restricted = Request::getGet('access_restricted');
-      CoreView_Http::setGlobal('page_title', 'Ilfate');
+      CoreView_Http::setGlobal('page_title', 'Rrobot');
       CoreView_Http::setGlobal('access_restricted', $access_restricted);
 
       /**
