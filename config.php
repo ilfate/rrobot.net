@@ -20,7 +20,8 @@ return array(
       
     'log_sql' => true,
     'is_dev'  => false,
-    'logs_path' => '/home/ilfate/www/php/logs/'
+    'logs_path' => '/home/ilfate/www/php/logs/',
+    'site_url' => 'rrobot.ru'
       
   ),
   'CoreProvider_PDOmysql' => array(

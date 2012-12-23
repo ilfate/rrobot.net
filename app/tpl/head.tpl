@@ -26,6 +26,7 @@
   <script type="text/javascript" src="<?=HTTP_ROOT?>js/form.js"></script>
   
   <script type="text/javascript" src="<?=HTTP_ROOT?>js/canvasActions.js"></script>
+  <script type="text/javascript" src="<?=HTTP_ROOT?>js/webSocket.js"></script>
   
   
   
