@@ -29,19 +29,19 @@ WSwrapper = function() {
      
      this.websocket.onopen = function(evt) { 
        WSwrapper.onOpen(evt);
-       info('onopen');
+       //info('onopen');
      }; 
      this.websocket.onclose = function(evt) { 
        WSwrapper.onClose(evt);
-       info('onclose');
+       //info('onclose');
      }; 
      this.websocket.onmessage = function(evt) { 
        WSwrapper.onMessage(evt);
-       info('onmessage');
+       //info('onmessage');
      }; 
      this.websocket.onerror = function(evt) { 
        WSwrapper.onError(evt);
-       info('onerror');
+      // info('onerror');
      }; 
    }  
    

@@ -7,6 +7,7 @@
  * To Public License, Version 2, as published by Sam Hocevar. See
  * http://sam.zoy.org/wtfpl/COPYING for more details. */
 // /home/ilfate/www/php/rrobot.net/app/server.php
+// /home/irubinchik/projects/ilfate/ilfate/rrobot.net/app/server.php
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -14,8 +15,8 @@ require(__DIR__ . '/lib/SplClassLoader.php');
 
 $classLoader = new SplClassLoader('Wrench', __DIR__ . '/lib');
 $classLoader->register();
-include '../config.php';
-$server = new \Wrench\Server('ws://rrobot.ru:8000/', array(
+$config = include __DIR__ . '/../config.php';
+$server = new \Wrench\Server('ws://'.$config['project']['site_url'].':8000/', array(
 //    'allowed_origins'            => array(
 //        'mysite.localhost'
 //    ),
@@ -44,5 +45,6 @@ $server = new \Wrench\Server('ws://rrobot.ru:8000/', array(
 //     )
 ));
 
-$server->registerApplication('echo', new \Wrench\Application\EchoApplication());
+//$server->registerApplication('echo', new \Wrench\Application\EchoApplication());
+$server->registerApplication('echo', new \Wrench\Application\ServerTimeApplication());
 $server->run();

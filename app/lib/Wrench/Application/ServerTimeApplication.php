@@ -29,7 +29,7 @@ class ServerTimeApplication extends Application
     public function onUpdate()
     {
         // limit updates to once per second
-        if(time() > $this->lastTimestamp) {
+        if(time() > $this->lastTimestamp + 5) {
             $this->lastTimestamp = time();
 
             foreach ($this->clients as $sendto) {
@@ -37,4 +37,8 @@ class ServerTimeApplication extends Application
             }
         }
     }
+
+	public function onData($data, $client) {
+		$client->send($data);
+	}
 }
