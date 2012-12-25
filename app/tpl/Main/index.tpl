@@ -9,5 +9,6 @@
 </div>
 
 <a class="btn btn-large btn-primary" href="<?=Helper::url('GameMap')?>" >Game Test</a>
+<a class="btn btn-large btn-primary" href="<?=Helper::url('GameMap', 'webSocket')?>" >WebSocket</a>
 
 
