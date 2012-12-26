@@ -16,6 +16,7 @@
   <script type="text/javascript" src="<?=HTTP_ROOT?>js/jquery-1.8.2.min.js"></script>
   <script type="text/javascript" src="<?=HTTP_ROOT?>bootstrap/js/bootstrap.min.js"></script>
   <script type="text/javascript" src="<?=HTTP_ROOT?>js/easeljs-0.5.0.min.js"></script>
+  <script type="text/javascript" src="<?=HTTP_ROOT?>js/preloadjs-0.2.0.min.js"></script>
   <? /*<script type="text/javascript" src="<?=HTTP_ROOT?>js/movieclip-0.5.0.min.js"></script> */ ?>
   
   <script type="text/javascript" src="<?=HTTP_ROOT?>js/events.js"></script>

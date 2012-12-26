@@ -10,15 +10,24 @@ CanvasActions = function() {
   this.objects = [];
   this.objects_names = [];
   this.stage = {};
+  this.loader = new createjs.PreloadJS();
+  this.assets = [];
   
   this.init = function()
   {
     this.stage = new createjs.Stage("demoCanvas");
+    this.loader.onFileLoad = this.handleFileLoad();
+    this.loader.onComplete = this.afterLoad();
     
 //    this.circle_t();
-	this.createMap();
+    this.createMap();
     
-	this.stage.update(); 
+    
+  }
+  
+  this.afterLoad = function()
+  {
+    this.stage.update(); 
     createjs.Ticker.addListener(CanvasActions);
     createjs.Ticker.setFPS(30); 
     createjs.Ticker.useRAF = true;
@@ -26,21 +35,30 @@ CanvasActions = function() {
   
   this.createMap = function() 
   {
-	  var map = new IL.Map();
-	  map.addSimpleCell(0, 0, 'dirt');
-	  map.addSimpleCell(1, 0, 'wall');
-	  map.addSimpleCell(1, 1, 'wall');
-	  map.addSimpleCell(0, 1, 'wall');
-	  map.addSimpleCell(-1, 1, 'wall');
-	  map.addSimpleCell(-1, 0, 'wall');
-	  map.addSimpleCell(-1, -1, 'wall');
-	  map.addSimpleCell(0, -1, 'wall');
-	  map.addSimpleCell(1, -1, 'wall');
-	  var square = new createjs.Shape();
-	  square.graphics.beginFill("black").drawRoundRect(0,0,30,80,0);
-	  square.x = 100;
-	  square.y = 100;
-	  this.stage.addChild(square);
+    var manifest = [
+      {src:"/images/game/tile1.png",id:"tile1"}
+    ];
+    this.loader.loadManifest(manifest);
+    var map = new IL.Map();
+    map.addSimpleCell(0, 0, 'dirt');
+    map.addSimpleCell(1, 0, 'wall');
+    map.addSimpleCell(1, 1, 'wall');
+    map.addSimpleCell(0, 1, 'wall');
+    map.addSimpleCell(-1, 1, 'wall');
+    map.addSimpleCell(-1, 0, 'wall');
+    map.addSimpleCell(-1, -1, 'wall');
+    map.addSimpleCell(0, -1, 'wall');
+    map.addSimpleCell(1, -1, 'wall');
+    
+    var container = new createjs.Container();
+    var square = new createjs.Shape();
+    square.graphics.beginFill("black").drawRoundRect(0,0,30,80,0);
+    
+    container.addChild(square);
+    container.x = 100;
+    container.y = 100;
+    //container.rotation = 90;
+    this.stage.addChild(container);
   }
   
   this.circle_t = function () {
@@ -68,16 +86,16 @@ CanvasActions = function() {
   }
   
   this.addObject = function(obj, name) {
-	  this.objects.push(obj);
-	  this.object_names.push(name);
+    this.objects.push(obj);
+    this.object_names.push(name);
   }
   this.getObject = function(name) {
-	  var idx = $.inArray(name,this.object_names);
-	  if(idx != -1) {
-		  return this.objects[idx];
-	  } else {
-		  return false;
-	  }
+    var idx = $.inArray(name,this.object_names);
+    if(idx != -1) {
+      return this.objects[idx];
+    } else {
+      return false;
+    }
   }
   
   this.addTick = function(func) {
@@ -101,6 +119,9 @@ CanvasActions = function() {
   this.start = function() {
     createjs.Ticker.setPaused(false);
   }
+  this.handleFileLoad = function(event) {
+    this.assets.push(event);
+  }
 }
 
 CanvasActions = new CanvasActions();
@@ -118,26 +139,26 @@ IL.Map = function()
   
   this.addCell = function(Cell)
   {
-		this.cells.push(Cell);
-		var name = Cell.Point.x + '_' + Cell.Point.y;
-		this.cell_idx.push(name);
+    this.cells.push(Cell);
+    var name = Cell.Point.x + '_' + Cell.Point.y;
+    this.cell_idx.push(name);
   }
   this.addSimpleCell = function(x, y, area) {
-	  this.addCell(new IL.Cell(new IL.Point(x, y), area))
+    this.addCell(new IL.Cell(new IL.Point(x, y), area))
   }
   this.getCell = function(x, y)
   {
-	  var name = x + '_' + y;
-	  var idx = $.inArray(name, this.cell_idx)
-	  if(idx != -1) {
-		  return this.cells[idx];
-	  } else {
-		  return false;
-	  }
+    var name = x + '_' + y;
+    var idx = $.inArray(name, this.cell_idx)
+    if(idx != -1) {
+      return this.cells[idx];
+    } else {
+      return false;
+    }
   }
   this.getMiddlePoint = function()
   {
-	  return new ILPoint(0,0);
+    return new ILPoint(0,0);
   }
   
 }
@@ -145,23 +166,23 @@ IL.Map = function()
 
 IL.Point = function(x, y)
 {
-	this.x = x ? x : 0;
-	this.y = y ? y : 0;
-	this.set = function(x,y)
-	{
-		this.x = x;
-		this.y = y;
-		return this;
-	}
+  this.x = x ? x : 0;
+  this.y = y ? y : 0;
+  this.set = function(x,y)
+  {
+    this.x = x;
+    this.y = y;
+    return this;
+  }
 }
 
 IL.Cell = function(Point, area)
 {
-	if(Point) 
-	{
-		this.Point = Point;
-	} else {
-		info('error. Cell needs a Point object')
-	}
-	this.area = area ? area : 'empty';
+  if(Point) 
+  {
+    this.Point = Point;
+  } else {
+    info('error. Cell needs a Point object')
+  }
+  this.area = area ? area : 'empty';
 }
