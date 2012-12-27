@@ -8,57 +8,85 @@ CanvasActions = function() {
   
   this.tick_methods = [];
   this.objects = [];
-  this.objects_names = [];
+  this.object_names = [];
   this.stage = {};
   this.loader = new createjs.PreloadJS();
   this.assets = [];
   
+  
   this.init = function()
   {
     this.stage = new createjs.Stage("demoCanvas");
-    this.loader.onFileLoad = this.handleFileLoad();
-    this.loader.onComplete = this.afterLoad();
-    
-//    this.circle_t();
-    this.createMap();
-    
-    
+	this.container = new createjs.Container();
+	this.width = $('#demoCanvas').width();
+	this.height = $('#demoCanvas').height();
+	
+	var manifest = this.getMapManifest();
+    this.loader.loadManifest(manifest);
+	
+    this.loader.onFileLoad = function(event){CanvasActions.handleFileLoad(event)};
+    this.loader.onComplete = function(){CanvasActions.afterLoad()};
+	
+	
   }
   
   this.afterLoad = function()
   {
+	this.createMap();  
+	  
+	this.container.x = this.width/2;  
+	this.container.y = this.height/2;  
+	this.stage.addChild(this.container);  
     this.stage.update(); 
     createjs.Ticker.addListener(CanvasActions);
     createjs.Ticker.setFPS(30); 
     createjs.Ticker.useRAF = true;
   }
   
+  this.getMapManifest = function() {
+	return [
+      {src:"/images/game/tile1.png",id:"floor"},
+      {src:"/images/game/tile1_damaged.png",id:"floor_d"},
+      {src:"/images/game/tile2.png",id:"empty"},
+      {src:"/images/game/block.png",id:"wall"}
+    ];  
+  }
+  
   this.createMap = function() 
   {
-    var manifest = [
-      {src:"/images/game/tile1.png",id:"tile1"}
-    ];
-    this.loader.loadManifest(manifest);
+    
+	
+    
     var map = new IL.Map();
-    map.addSimpleCell(0, 0, 'dirt');
-    map.addSimpleCell(1, 0, 'wall');
-    map.addSimpleCell(1, 1, 'wall');
-    map.addSimpleCell(0, 1, 'wall');
-    map.addSimpleCell(-1, 1, 'wall');
-    map.addSimpleCell(-1, 0, 'wall');
-    map.addSimpleCell(-1, -1, 'wall');
-    map.addSimpleCell(0, -1, 'wall');
-    map.addSimpleCell(1, -1, 'wall');
+	cells = ["floor","wall","floor_d"];
+	for(var x = -5; x < 5; x++)
+	{
+		for(var y = -5; y < 5; y++)
+		{
+			var rand = Math.floor(Math.random() * 3);
+			map.addSimpleCell(x, y, cells[rand]);
+		}
+	}
+//    map.addSimpleCell(0, 0, 'floor');
+//    map.addSimpleCell(1, 0, 'wall');
+//    map.addSimpleCell(1, 1, 'wall');
+//    map.addSimpleCell(0, 1, 'wall');
+//    map.addSimpleCell(-1, 1, 'wall');
+//    map.addSimpleCell(-1, 0, 'wall');
+//    map.addSimpleCell(-1, -1, 'wall');
+//    map.addSimpleCell(0, -1, 'wall');
+//    map.addSimpleCell(1, -1, 'wall');
     
-    var container = new createjs.Container();
-    var square = new createjs.Shape();
-    square.graphics.beginFill("black").drawRoundRect(0,0,30,80,0);
+	map.draw(this.container);
     
-    container.addChild(square);
-    container.x = 100;
-    container.y = 100;
+   // var square = new createjs.Shape();
+   // square.graphics.beginFill("black").drawRoundRect(0,0,30,80,0);
+    
+    //this.container.addChild(square);
+//    container.x = 100;
+//    container.y = 100;
     //container.rotation = 90;
-    this.stage.addChild(container);
+    
   }
   
   this.circle_t = function () {
@@ -120,7 +148,8 @@ CanvasActions = function() {
     createjs.Ticker.setPaused(false);
   }
   this.handleFileLoad = function(event) {
-    this.assets.push(event);
+    //CanvasActions.assets.push(event);
+	this.addObject(event.result, event.id);
   }
 }
 
@@ -136,6 +165,7 @@ IL.Map = function()
 {
   this.cells = [];
   this.cell_idx = [];
+  this.cell_width = 32;
   
   this.addCell = function(Cell)
   {
@@ -143,8 +173,8 @@ IL.Map = function()
     var name = Cell.Point.x + '_' + Cell.Point.y;
     this.cell_idx.push(name);
   }
-  this.addSimpleCell = function(x, y, area) {
-    this.addCell(new IL.Cell(new IL.Point(x, y), area))
+  this.addSimpleCell = function(x, y, type) {
+    this.addCell(new IL.Cell(new IL.Point(x, y), type))
   }
   this.getCell = function(x, y)
   {
@@ -159,6 +189,11 @@ IL.Map = function()
   this.getMiddlePoint = function()
   {
     return new ILPoint(0,0);
+  }
+  this.draw = function(container) {
+	  for(var i in this.cells) {
+		  this.cells[i].draw(container, this.cell_width);
+	  }
   }
   
 }
@@ -176,7 +211,7 @@ IL.Point = function(x, y)
   }
 }
 
-IL.Cell = function(Point, area)
+IL.Cell = function(Point, type)
 {
   if(Point) 
   {
@@ -184,5 +219,13 @@ IL.Cell = function(Point, area)
   } else {
     info('error. Cell needs a Point object')
   }
-  this.area = area ? area : 'empty';
+  this.type = type ? type : 'empty';
+  
+  this.draw = function(container, width) {
+	  var cell = new createjs.Shape();
+	  cell.graphics
+		.beginBitmapFill(CanvasActions.getObject(this.type))
+		.drawRect(width * this.Point.x, width * this.Point.y, width, width);
+	  container.addChild(cell);
+  }
 }
