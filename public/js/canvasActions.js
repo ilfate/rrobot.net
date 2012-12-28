@@ -63,12 +63,12 @@ CanvasActions = function() {
       CanvasActions.map.draw();
     });
     this.container.addChild(map_container);
-   // var square = new createjs.Shape();
-   // square.graphics.beginFill("black").drawRoundRect(0,0,30,80,0);
+    // var square = new createjs.Shape();
+    // square.graphics.beginFill("black").drawRoundRect(0,0,30,80,0);
     
     //this.container.addChild(square);
-//    container.x = 100;
-//    container.y = 100;
+	//container.x = 100;
+	//container.y = 100;
     //container.rotation = 90;
     
   }
@@ -148,6 +148,7 @@ IL = new IL();
 IL.Map = function(container) 
 {
   this.container = container;
+  this.container_def_point = new IL.Point(container.x, container.y)
   this.needDraw = true;
   this.cells = [];
   this.cell_idx = [];
@@ -207,19 +208,63 @@ IL.Map = function(container)
   this.checkAllVisibleCells = function()
   {
     var middle = this.getMiddlePoint();
+	var pixel_radius = this.map_radius * this.cell_width;
+	var left_border = middle.x - pixel_radius;
+	var top_border = middle.y - pixel_radius;
+	if(left_border < 0) { var left_cut = -(left_border % this.cell_width); } 
+	else { var left_cut = (this.cell_width - left_border % this.cell_width); }
+	if(top_border < 0) { var top_cut = -(top_border % this.cell_width); } 
+	else { var top_cut = (this.cell_width - top_border % this.cell_width); }
+	
+	if(left_cut) {
+		this.container.x = this.container_def_point.x - (this.cell_width - left_cut);
+	} else {
+		this.container.x = this.container_def_point.x;
+	}
+	if(top_cut) {
+		this.container.y = this.container_def_point.y - (this.cell_width - top_cut);
+	} else {
+		this.container.y = this.container_def_point.y;
+	}
+	var cells_to_left = (Math.floor(left_border / this.cell_width));
+	var cells_to_top = (Math.floor(top_border / this.cell_width));
+	var row_end = cells_to_left + this.map_radius*2 + 1 + ((left_cut == 0) ? 0 : 1);
+	var col_end = cells_to_top + this.map_radius*2 + 1 + ((top_cut == 0) ? 0 : 1);
+	
     var window_x = -this.map_radius;
     var window_y = -this.map_radius;
-    for(var x = (middle.x - this.map_radius); x <= (middle.x + this.map_radius); x++,window_x++)
+    for(var x = cells_to_left; x < row_end; x++,window_x++)
     {
       window_y = -this.map_radius;
-      for(var y = (middle.y - this.map_radius); y <= (middle.y + this.map_radius); y++,window_y++)
+      for(var y = cells_to_top; y < col_end; y++,window_y++)
       {
         var cell = this.getCell(x, y);
         if(!cell) {
           cell = this.loadCell(x, y);
         }
         cell.set(window_x, window_y);
-        
+		if(left_cut) {
+			if(x == cells_to_left) {
+				cell.cutX(left_cut - this.cell_width);
+			} else if(x == row_end-1) {
+				cell.cutX(left_cut);
+			} else {
+				cell.cutX(0);
+			}
+		} else {
+			cell.cutX(0);
+		}
+		if(top_cut) {
+			if(y == cells_to_top) {
+				cell.cutY(top_cut - this.cell_width);
+			} else if(y == col_end-1) {
+				cell.cutY(top_cut);
+			} else {
+				cell.cutY(0);
+			}
+		} else {
+			cell.cutY(0);
+		}
       }
     }
   }
@@ -263,6 +308,10 @@ IL.Cell = function(Point, type)
   this.visible = false;
   this.shape = new createjs.Shape();
   this.window_point = new IL.Point(0, 0);
+  this.cutLeft = 0;
+  this.cutRight = 0;
+  this.cutTop = 0;
+  this.cutBottom = 0;
   if(Point) 
   {
     this.Point = Point;
@@ -277,32 +326,70 @@ IL.Cell = function(Point, type)
     this.window_point.y = y;
     this.visible = true;
   }
+  this.cutX = function(cut) {
+	  if(cut < 0) {
+		this.cutLeft = -cut;
+		this.cutRight = 0;
+	  } else if(cut > 0) {
+		this.cutLeft = 0;
+		this.cutRight = cut;
+	  } else {
+		this.cutRight = this.cutLeft = 0;  
+	  }
+  }
+  this.cutY = function(cut) {
+	  if(cut < 0) {
+		this.cutTop = -cut;
+		this.cutBottom = 0;
+	  } else if(cut > 0) {
+		this.cutTop = 0;
+		this.cutBottom = cut;
+	  } else {
+		this.cutTop = this.cutBottom = 0;  
+	  }
+  }
   
   this.draw = function(container, width) 
   {
+	this.bitmap = new createjs.Bitmap(CanvasActions.getObject(this.type));
+	this.bitmap.x = width * this.window_point.x + this.cutLeft;
+	this.bitmap.y = width * this.window_point.y + this.cutTop;
+
+	this.bitmap.sourceRect = new createjs.Rectangle(this.cutLeft, this.cutTop, width - this.cutLeft - this.cutRight, width - this.cutTop - this.cutBottom);
+	container.addChild(this.bitmap);
+	//this.bitmap.sourceRect = new createjs.Rectangle(-10,0, width, width);
+	//this.bitmap.cache(10,10,width,width);
+	//this.bitmap.updateCache();
+	
+	//info(this.bitmap.sourceRect);
+	/*
     this.shape.graphics
       .clear()
-      .beginBitmapFill(CanvasActions.getObject(this.type))
-      .drawRect(width * this.window_point.x, width * this.window_point.y, width, width);
+      .beginBitmapFill(this.bitmap.image)
+      .drawRect(width * this.window_point.x, width * this.window_point.y, width -15 , width);
+	  
+	this.shape.x = -15; 
+	
     container.addChild(this.shape);
+	*/
   }
 }
 
 $(document).keypress(function(event) {
-  info(event);
+ // info(event);
   switch(event.keyCode)
   {
     case 37:
-      CanvasActions.map.addX(-1);
+      CanvasActions.map.addX(-8);
       break;
     case 38:
-      CanvasActions.map.addY(-1);
+      CanvasActions.map.addY(-8);
       break;
     case 39:
-      CanvasActions.map.addX(1);
+      CanvasActions.map.addX(8);
       break;
     case 40:
-      CanvasActions.map.addY(1);
+      CanvasActions.map.addY(8);
       break;
   }
 });
