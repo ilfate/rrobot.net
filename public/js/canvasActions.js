@@ -17,6 +17,8 @@ CanvasActions = function() {
   this.init = function()
   {
     this.stage = new createjs.Stage("demoCanvas");
+    this.stage.enableMouseOver(10);
+    this.stage.mouseMoveOutside = true;
     this.container = new createjs.Container();
     this.width = $('#demoCanvas').width();
     this.height = $('#demoCanvas').height();
@@ -153,7 +155,7 @@ IL.Map = function(container)
   this.cells = [];
   this.cell_idx = [];
   this.cell_width = 32;
-  this.map_radius = 3;
+  this.map_radius = 5;
   this.x = 0;
   this.y = 0;
   this.Point = new IL.Point(0, 0);
@@ -165,6 +167,19 @@ IL.Map = function(container)
     this.Point.y += val;
     this.needDraw = true;
   }
+  var map = this;
+  this.container.onPress = function(evt) 
+  {
+    var offset = {x: map.Point.x + evt.stageX, y: map.Point.y + evt.stageY};
+
+    evt.onMouseMove = function(ev) 
+    {
+      map.Point.x = offset.x - ev.stageX;
+      map.Point.y = offset.y - ev.stageY;
+      map.needDraw = true;
+    }
+  }
+   
   
   this.addCell = function(Cell)
   {
@@ -376,7 +391,7 @@ IL.Cell = function(Point, type)
 }
 
 $(document).keypress(function(event) {
- // info(event);
+//  info(event.keyCode);
   switch(event.keyCode)
   {
     case 37:
@@ -393,8 +408,3 @@ $(document).keypress(function(event) {
       break;
   }
 });
-
-//$(document).bind("keydown", "up", function() { CanvasActions.map.addY(-1) });
-//$(document).bind("keydown", "down", function() { CanvasActions.map.addY(1) });
-//$(document).bind("keydown", "left", function() { CanvasActions.map.addX(1) });
-//$(document).bind("keydown", "right", function() { CanvasActions.map.addY(-1) });

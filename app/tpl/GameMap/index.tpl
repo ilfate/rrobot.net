@@ -1,5 +1,5 @@
 
-<canvas id="demoCanvas" width="500" height="300">
+<canvas id="demoCanvas" width="500" height="500">
     alternate content
 </canvas>
 
