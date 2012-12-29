@@ -156,6 +156,7 @@ IL.Map = function(container)
   this.cell_idx = [];
   this.cell_width = 32;
   this.map_radius = 5;
+  this.vision_radius = 15;
   this.x = 0;
   this.y = 0;
   this.Point = new IL.Point(0, 0);
@@ -167,6 +168,15 @@ IL.Map = function(container)
     this.Point.y += val;
     this.needDraw = true;
   }
+  this.set = function(x, y) {
+	if(Math.abs(x) <= this.vision_radius * this.cell_width ) {
+		this.Point.x = x;
+	}
+	if(Math.abs(y) <= this.vision_radius * this.cell_width ) {
+		this.Point.y = y;
+	}
+	this.needDraw = true;
+  }
   var map = this;
   this.container.onPress = function(evt) 
   {
@@ -174,9 +184,7 @@ IL.Map = function(container)
 
     evt.onMouseMove = function(ev) 
     {
-      map.Point.x = offset.x - ev.stageX;
-      map.Point.y = offset.y - ev.stageY;
-      map.needDraw = true;
+	  map.set(offset.x - ev.stageX, offset.y - ev.stageY);
     }
   }
    
