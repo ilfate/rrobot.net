@@ -35,7 +35,8 @@ CanvasActions = function() {
   this.afterLoad = function()
   {
     this.createMap();  
-
+    this.createRobot();
+    
     this.stage.addChild(this.container);  
     this.stage.update(); 
     createjs.Ticker.addListener(CanvasActions);
@@ -49,7 +50,8 @@ CanvasActions = function() {
       {src:"/images/game/tile1.png",id:"floor"},
       {src:"/images/game/tile1_damaged.png",id:"floor_d"},
       {src:"/images/game/tile2.png",id:"empty"},
-      {src:"/images/game/block.png",id:"wall"}
+      {src:"/images/game/block.png",id:"wall"},
+      {src:"/images/game/map.png",id:"map"}
     ];  
   }
   
@@ -64,15 +66,19 @@ CanvasActions = function() {
     this.addTick(function(elapsedTime){
       CanvasActions.map.draw();
     });
-    this.container.addChild(map_container);
-    // var square = new createjs.Shape();
-    // square.graphics.beginFill("black").drawRoundRect(0,0,30,80,0);
-    
-    //this.container.addChild(square);
-	//container.x = 100;
-	//container.y = 100;
-    //container.rotation = 90;
-    
+    this.container.addChild(map_container);    
+  }
+  
+  this.createRobot = function()
+  {
+    var robot_container = new createjs.Container();
+    this.robot = new IL.Robot(robot_container, this.map);
+    this.robot.draw();
+    this.map.bindObject(this.robot);
+    this.addTick(function(elapsedTime){
+      CanvasActions.robot.draw();
+    });
+    this.container.addChild(robot_container);
   }
   
   this.circle_t = function () {
@@ -151,43 +157,105 @@ IL.Map = function(container)
 {
   this.container = container;
   this.container_def_point = new IL.Point(container.x, container.y)
+  
   this.needDraw = true;
   this.cells = [];
   this.cell_idx = [];
-  this.cell_width = 32;
-  this.map_radius = 5;
-  this.vision_radius = 15;
+  this.binded_objects = [];
+  this.cell_width = 64;
+  this.map_radius = 4;
+  this.vision_radius = 3;
   this.x = 0;
   this.y = 0;
-  this.Point = new IL.Point(0, 0);
-  this.addX = function(val) {
-    this.Point.x += val;
+  this.camera = new IL.Point(0, 0);
+  this.center = new IL.Point(0, 0);
+  this.centerPoint = new IL.Point(0, 0);
+  
+  this.animation = new IL.Animation("move");
+
+  this.setCamera = function(x, y, speed) 
+  {
+    // if new point is out of vision radius we set this new point to our vision radius border
+    if(Math.abs(x - this.center.x) > this.vision_radius * this.cell_width ) {
+        x = this.center.x + this.vision_radius * this.cell_width * ( this.center.x > this.camera.x ? -1 : 1 );
+      }
+    if(Math.abs(y - this.center.y) > this.vision_radius * this.cell_width ) {
+        y = this.center.y + this.vision_radius * this.cell_width * ( this.center.y > this.camera.y ? -1 : 1 );
+//        info(y);
+      }
+    if(!speed) {
+      this.camera.x = x;
+      this.camera.y = y;
+    } else {
+      this.animation
+        .setSpeed(speed)
+        .setStart(this.camera)
+        .setEnd(new IL.Point(x, y))
+        .start();
+    }
     this.needDraw = true;
   }
-  this.addY = function(val) {
-    this.Point.y += val;
+  this.move = function(x, y) 
+  {
+    this.center.x += x * this.cell_width;
+    this.center.y += y * this.cell_width;
+    this.centerPoint.x += x;
+    this.centerPoint.y += y;
+    this.setCamera(this.center.x, this.center.y, 250);//(this.map_radius * this.cell_width - this.center.distance(this.camera)) * 5 );
     this.needDraw = true;
-  }
-  this.set = function(x, y) {
-	if(Math.abs(x) <= this.vision_radius * this.cell_width ) {
-		this.Point.x = x;
-	}
-	if(Math.abs(y) <= this.vision_radius * this.cell_width ) {
-		this.Point.y = y;
-	}
-	this.needDraw = true;
   }
   var map = this;
   this.container.onPress = function(evt) 
   {
-    var offset = {x: map.Point.x + evt.stageX, y: map.Point.y + evt.stageY};
+    var offset = {x: map.camera.x + evt.stageX, y: map.camera.y + evt.stageY};
 
     evt.onMouseMove = function(ev) 
     {
-	  map.set(offset.x - ev.stageX, offset.y - ev.stageY);
+      map.setCamera(offset.x - ev.stageX, offset.y - ev.stageY);
     }
   }
-   
+  this.bindObject = function(obj)
+  {
+    this.binded_objects.push(obj);
+  }
+  this.getSpriteType = function(type) 
+  {
+    var x = 0;
+    var y = 0;
+    switch(type) {
+      case  "floor" :
+        x = 0;y = 0;
+      break;
+      case  "wall" :
+        x = 8;y = 5;
+      break;
+      case  "wall_d1" :
+        x = 7;y = 5;
+      break;
+      case  "wall_d2" :
+        x = 6;y = 6;
+      break;
+      case  "wall_d3" :
+        x = 6;y = 5;
+      break;
+      case  "floor_d" :
+        x = 0;y = 1;
+      break;
+      case  "floor_1" :
+        x = 2;y = 1;
+      break;
+      case  "floor_2" :
+        x = 7;y = 0;
+      break;
+      case  "floor_3" :
+        x = 3;y = 1;
+      break;
+      case  "floor_4" :
+        x = 1;y = 1;
+      break;
+    }
+    return {"x": x*this.cell_width,"y":y*this.cell_width};
+  }
   
   this.addCell = function(Cell)
   {
@@ -212,82 +280,89 @@ IL.Map = function(container)
     var name = x + '_' + y;
     var idx = $.inArray(name, this.cell_idx)
     if(idx != -1) {
-      //this.cells[idx] = '';
       this.cell_idx[idx] = '';
     }
   }
+  this.cells_options = [
+    "floor", "floor", "floor", "floor", 
+    "wall", "wall", "wall", "wall", "wall", "wall",
+    "floor_d", 
+    "floor_1", 
+    "floor_2", 
+    "floor_3", 
+    "floor_4"
+  ];
   this.loadCell = function(x, y)
   {
-    var cells = ["floor","wall","floor_d"];
-    var rand = Math.floor(Math.random() * 3);
-    this.addSimpleCell(x, y, cells[rand]);
+    var rand = Math.floor(Math.random() * this.cells_options.length);
+    this.addSimpleCell(x, y, this.cells_options[rand]);
     return this.getCell(x, y);
   }
   
   this.getMiddlePoint = function()
   {
-    return this.Point;
+      return this.camera; 
   }
   this.checkAllVisibleCells = function()
   {
     var middle = this.getMiddlePoint();
-	var pixel_radius = this.map_radius * this.cell_width;
-	var left_border = middle.x - pixel_radius;
-	var top_border = middle.y - pixel_radius;
-	if(left_border < 0) { var left_cut = -(left_border % this.cell_width); } 
-	else { var left_cut = (this.cell_width - left_border % this.cell_width); }
-	if(top_border < 0) { var top_cut = -(top_border % this.cell_width); } 
-	else { var top_cut = (this.cell_width - top_border % this.cell_width); }
-	
-	if(left_cut) {
-		this.container.x = this.container_def_point.x - (this.cell_width - left_cut);
-	} else {
-		this.container.x = this.container_def_point.x;
-	}
-	if(top_cut) {
-		this.container.y = this.container_def_point.y - (this.cell_width - top_cut);
-	} else {
-		this.container.y = this.container_def_point.y;
-	}
-	var cells_to_left = (Math.floor(left_border / this.cell_width));
-	var cells_to_top = (Math.floor(top_border / this.cell_width));
-	var row_end = cells_to_left + this.map_radius*2 + 1 + ((left_cut == 0) ? 0 : 1);
-	var col_end = cells_to_top + this.map_radius*2 + 1 + ((top_cut == 0) ? 0 : 1);
-	
-    var window_x = -this.map_radius;
-    var window_y = -this.map_radius;
-    for(var x = cells_to_left; x < row_end; x++,window_x++)
-    {
-      window_y = -this.map_radius;
-      for(var y = cells_to_top; y < col_end; y++,window_y++)
+    var pixel_radius = this.map_radius * this.cell_width;
+    var left_border = middle.x - pixel_radius;
+    var top_border = middle.y - pixel_radius;
+    if(left_border < 0) {var left_cut = -(left_border % this.cell_width);} 
+    else {var left_cut = (this.cell_width - left_border % this.cell_width);}
+    if(top_border < 0) {var top_cut = -(top_border % this.cell_width);} 
+    else {var top_cut = (this.cell_width - top_border % this.cell_width);}
+
+    if(left_cut) {
+      this.container.x = this.container_def_point.x - (this.cell_width - left_cut);
+    } else {
+      this.container.x = this.container_def_point.x;
+    }
+    if(top_cut) {
+      this.container.y = this.container_def_point.y - (this.cell_width - top_cut);
+    } else {
+      this.container.y = this.container_def_point.y;
+    }
+    var cells_to_left = (Math.floor(left_border / this.cell_width));
+    var cells_to_top = (Math.floor(top_border / this.cell_width));
+    var row_end = cells_to_left + this.map_radius*2 + 1 + ((left_cut == 0) ? 0 : 1);
+    var col_end = cells_to_top + this.map_radius*2 + 1 + ((top_cut == 0) ? 0 : 1);
+
+      var window_x = -this.map_radius;
+      var window_y = -this.map_radius;
+      for(var x = cells_to_left; x < row_end; x++,window_x++)
       {
-        var cell = this.getCell(x, y);
-        if(!cell) {
-          cell = this.loadCell(x, y);
+        window_y = -this.map_radius;
+        for(var y = cells_to_top; y < col_end; y++,window_y++)
+        {
+          var cell = this.getCell(x, y);
+          if(!cell) {
+            cell = this.loadCell(x, y);
+          }
+          cell.set(window_x, window_y);
+      if(left_cut) {
+        if(x == cells_to_left) {
+          cell.cutX(left_cut - this.cell_width);
+        } else if(x == row_end-1) {
+          cell.cutX(left_cut);
+        } else {
+          cell.cutX(0);
         }
-        cell.set(window_x, window_y);
-		if(left_cut) {
-			if(x == cells_to_left) {
-				cell.cutX(left_cut - this.cell_width);
-			} else if(x == row_end-1) {
-				cell.cutX(left_cut);
-			} else {
-				cell.cutX(0);
-			}
-		} else {
-			cell.cutX(0);
-		}
-		if(top_cut) {
-			if(y == cells_to_top) {
-				cell.cutY(top_cut - this.cell_width);
-			} else if(y == col_end-1) {
-				cell.cutY(top_cut);
-			} else {
-				cell.cutY(0);
-			}
-		} else {
-			cell.cutY(0);
-		}
+      } else {
+        cell.cutX(0);
+      }
+      if(top_cut) {
+        if(y == cells_to_top) {
+          cell.cutY(top_cut - this.cell_width);
+        } else if(y == col_end-1) {
+          cell.cutY(top_cut);
+        } else {
+          cell.cutY(0);
+        }
+      } else {
+        cell.cutY(0);
+      }
       }
     }
   }
@@ -295,24 +370,203 @@ IL.Map = function(container)
   {
     if(this.needDraw) 
     {
+      for(var i in this.binded_objects)
+      {
+        this.binded_objects[i].update();
+      }
+      if(this.animation.isRunning()) {
+        this.camera = this.animation.tic();
+      }
       this.checkAllVisibleCells();
       this.container.removeAllChildren();
+      var cell_need_more_draw = false;
       for(var i in this.cells) 
       {
-        
         if(this.cells[i].visible) 
         {
-          
-          this.cells[i].draw(this.container, this.cell_width);
+          if(this.cells[i].draw(this.container, this.cell_width))
+          {
+            cell_need_more_draw = true;
+          }
           this.cells[i].visible = false;
         }
       }
-      this.needDraw = false;
+      if(!this.animation.isRunning() && !cell_need_more_draw) {
+        this.needDraw = false;
+      }
     }
+  }
+  this.update = function()
+  {
+    this.needDraw = true;
   }
   
 }
+////////////////////////////////////////////////////////////////////////////////
+///////////////////    ROBOT ///////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+IL.Robot = function(container, map)
+{
+  this.container = container;
+  this.map = map;
+  this.direction = 3;
+  this.needDraw = true;
   
+  this.container.x = this.map.container.x + this.map.cell_width / 2;
+  this.container.y = this.map.container.y + this.map.cell_width / 2;
+  
+  this.point = new IL.Point(this.map.centerPoint.x, this.map.centerPoint.y);
+  this.animation = new IL.Animation("move");
+  
+  this.img =  new createjs.Bitmap(CanvasActions.getObject("map"));
+  this.img.sourceRect = new createjs.Rectangle(64, 128, 64, 64);
+  this.img.regX = this.map.cell_width / 2;
+  this.img.regY = this.map.cell_width / 2;
+  
+  
+  this.move = function(x, y)
+  {
+    if(this.animation.isRunning()) return false;
+    var cell = this.map.getCell(this.point.x + x, this.point.y + y);
+    if(cell.isPassable()) 
+    {
+      this.animation.setStart(new IL.Point(this.point.x * this.map.cell_width, this.point.y * this.map.cell_width));
+      this.point.x += x;
+      this.point.y += y;
+      this.animation
+        .setEnd(new IL.Point(this.point.x * this.map.cell_width, this.point.y * this.map.cell_width))
+        .setSpeed(150)
+        .setType("move")
+        .start();
+      this.map.move(x, y);
+      this.update();
+    }
+    return this;
+  }
+  this.rotate = function(side)
+  {
+    if(this.animation.isRunning()) return false;
+    this.animation.setStart(this.img.rotation);
+    if(side > 0) {
+      this.direction++;
+      if(this.direction > 3) {
+        this.direction = 0;
+        this.animation.setStart(-180);
+      }
+      
+    }
+    if(side < 0) {
+      this.direction--;
+      if(this.direction < 0) {
+        this.direction = 3;
+        this.animation.setStart(270);
+      }
+    }
+    this.animation
+      .setType("rotate")
+      .setSpeed(150)
+      .setEnd(90 * this.direction - 90)
+      .start();
+    this.needDraw = true;
+    
+    return this;
+  }
+  this.forward = function()
+  {
+    switch(this.direction){
+      case 0:
+        this.move(0, -1);
+      break;
+      case 1:
+        this.move(1, 0);
+      break;
+      case 2:
+        this.move(0, 1);
+      break;
+      case 3:
+        this.move(-1, 0);
+      break;
+    }
+  }
+  this.backward = function()
+  {
+    switch(this.direction){
+      case 0:
+        this.move(0, 1);
+      break;
+      case 1:
+        this.move(-1, 0);
+      break;
+      case 2:
+        this.move(0, -1);
+      break;
+      case 3:
+        this.move(1, 0);
+      break;
+    }
+  }
+  this.destroyWall = function()
+  {
+    var next = this.point.next(this.direction);
+    var cell = this.map.getCell(next.x, next.y);
+    if(cell.type == "wall")
+    {
+//      cell.setType("floor");
+      cell.runAnimation("destroyWall");
+      this.animation
+        .setType("wait")
+        .setSpeed(1000)
+        .start();
+      this.map.update();
+    }
+  }
+  this.getPosition = function()
+  {
+    if(this.animation.isRunning() && this.animation.isType("move"))
+    {
+      return this.animation.getLast();
+    } else {
+      return new IL.Point(this.point.x * this.map.cell_width, this.point.y * this.map.cell_width);
+    }
+  }
+  this.checkAngle = function()
+  {
+    if(this.animation.isRunning() && this.animation.isType("rotate")) {
+        this.img.rotation = this.animation.getLast();
+    } else {
+      this.img.rotation = 90 * this.direction - 90;
+    }
+  }
+  this.draw = function()
+  {
+    if(this.needDraw)
+    {
+      if(this.animation.isRunning()) {
+        this.animation.tic();
+      }
+      this.container.removeAllChildren();
+      var position = this.getPosition();
+      this.checkAngle();
+      
+      this.img.x = -this.map.camera.x + position.x;
+      this.img.y = -this.map.camera.y + position.y;
+      
+      this.container.addChild(this.img);
+      if(!this.animation.isRunning()) {
+        this.needDraw = false;
+      }
+    }
+  }
+  this.update = function()
+  {
+    this.needDraw = true;
+  }
+}
+  
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////   POINT    ///////////////
+////////////////////////////////////////////////////////////////////////////////
 
 IL.Point = function(x, y)
 {
@@ -324,7 +578,30 @@ IL.Point = function(x, y)
     this.y = y;
     return this;
   }
+  this.distance = function(point)
+  {
+    return Math.sqrt(Math.pow((point.x - this.x), 2) + Math.pow((point.y - this.y), 2));
+  }
+  this.next = function(direction)
+  {
+    switch(direction)
+    {
+      case 0:
+        return new IL.Point(this.x, this.y - 1);
+      case 1:
+        return new IL.Point(this.x + 1, this.y);
+      case 2:
+        return new IL.Point(this.x, this.y + 1);
+      case 3:
+        return new IL.Point(this.x - 1, this.y);
+        
+    }
+  }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////   CELL     ///////////////
+////////////////////////////////////////////////////////////////////////////////
 
 IL.Cell = function(Point, type)
 {
@@ -335,14 +612,30 @@ IL.Cell = function(Point, type)
   this.cutRight = 0;
   this.cutTop = 0;
   this.cutBottom = 0;
+  
+  this.newType = true;
   if(Point) 
   {
     this.Point = Point;
   } else {
     info('error. Cell needs a Point object')
   }
-  this.type = type ? type : 'empty';
   
+  this.setType = function(type)
+  {
+    this.type = type;
+    this.sprite = CanvasActions.map.getSpriteType(type);
+  }
+  this.setType(type);
+  
+  this.runAnimation = function(name)
+  {
+    this.animation = new IL.Animation("spriteAnimation");
+    this.animation
+      .setSpeed(1000)
+      .setStart(["wall_d1", "wall_d2", "wall_d3", "floor"])
+      .start()
+  }
   this.set = function(x, y)
   {
     this.window_point.x = x;
@@ -372,47 +665,191 @@ IL.Cell = function(Point, type)
 	  }
   }
   
+  this.isPassable = function()
+  {
+    if(this.type == "wall" || this.type == "hole") {
+      return false;
+    }
+    return true;
+  }
+  
+  
   this.draw = function(container, width) 
   {
-	this.bitmap = new createjs.Bitmap(CanvasActions.getObject(this.type));
-	this.bitmap.x = width * this.window_point.x + this.cutLeft;
-	this.bitmap.y = width * this.window_point.y + this.cutTop;
+    if(this.newType) {
+      this.bitmap = new createjs.Bitmap(CanvasActions.getObject("map"));
+      this.bitmap.sourceRect = new createjs.Rectangle(0, 0, 0, 0);
+      this.newType = false;
+    }
+    
+    this.bitmap.x = width * this.window_point.x + this.cutLeft;
+    this.bitmap.y = width * this.window_point.y + this.cutTop;
+    this.bitmap.sourceRect.x = this.sprite.x + this.cutLeft;
+    this.bitmap.sourceRect.y = this.sprite.y + this.cutTop;
+    this.bitmap.sourceRect.width = width - this.cutLeft - this.cutRight;
+    this.bitmap.sourceRect.height = width - this.cutTop - this.cutBottom;
+    
+    container.addChild(this.bitmap);
+    
+    if(this.animation && this.animation.isRunning())
+    {
+      this.setType(this.animation.tic());
+      return true;
+    }
+    return false; // false means that we dont need to draw it. well cell dont need
+  }
+}
 
-	this.bitmap.sourceRect = new createjs.Rectangle(this.cutLeft, this.cutTop, width - this.cutLeft - this.cutRight, width - this.cutTop - this.cutBottom);
-	container.addChild(this.bitmap);
-	//this.bitmap.sourceRect = new createjs.Rectangle(-10,0, width, width);
-	//this.bitmap.cache(10,10,width,width);
-	//this.bitmap.updateCache();
-	
-	//info(this.bitmap.sourceRect);
-	/*
-    this.shape.graphics
-      .clear()
-      .beginBitmapFill(this.bitmap.image)
-      .drawRect(width * this.window_point.x, width * this.window_point.y, width -15 , width);
-	  
-	this.shape.x = -15; 
-	
-    container.addChild(this.shape);
-	*/
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////   ANIMATION    ///////////
+////////////////////////////////////////////////////////////////////////////////
+IL.Animation = function(type)
+{
+  this.startObj;
+  this.endObj;
+  this.type = type;
+  this.started = false;
+  this.working = false;
+  this.repeat = false;
+  this.speed = 0;
+  this.start_time = 0;
+  this.last_tic = false;
+  
+  this.start = function(repeat)
+  {
+    this.started = true;
+    this.working = true;
+    this.start_time = 0;
+    this.repeat = !!repeat;
+    return this;
+  }
+  this.stop = function() {
+    this.working = false;
+    return this;
+  }
+  this.isRunning = function() {
+    return this.working;
+  }
+  this.setStart = function(e)
+  {
+    this.startObj = e;
+    return this;
+  }
+  this.setEnd = function(e)
+  {
+    this.endObj = e;
+    return this;
+  }
+  this.setSpeed = function(speed)
+  {
+    this.speed = speed;
+    return this;
+  }
+  this.setType = function(type)
+  {
+    this.type = type;
+    return this;
+  }
+  this.isType = function(type)
+  {
+    return this.type === type;
+  }
+  this.tic = function()
+  {
+    if(!this.working) {
+      info('WTF tic try but animation is not working');
+      return false;
+    }
+    
+    if(!this.start_time)
+    {
+      this.start_time = new Date().getTime();
+    }
+    var time = new Date().getTime();
+    var dT = time - this.start_time;
+    if(dT >= this.speed) {
+      dT = this.speed;
+      this.stop();
+    }
+    var k = dT / this.speed;
+    switch(this.type) {
+      case "move":
+        var dX = (this.endObj.x - this.startObj.x) * k + this.startObj.x;
+        var dY = (this.endObj.y - this.startObj.y) * k + this.startObj.y;
+        this.last_tic = new IL.Point(dX, dY);
+        return this.last_tic;
+      break;
+      
+      case "rotate":
+        this.last_tic = (this.endObj - this.startObj) * k + this.startObj;
+        return this.last_tic;
+        break;
+        
+      case "spriteAnimation":
+        var idx = Math.round(this.startObj.length * k);
+        if(idx == this.startObj.length) idx = this.startObj.length - 1;
+        this.last_tic = this.startObj[idx];
+        return this.last_tic;
+        break;
+      case "wait":
+        this.last_tic = true;
+        return this.last_tic;
+        break;
+    }
+    return false;
+  }
+  this.getLast = function()
+  {
+    return this.last_tic;
   }
 }
 
 $(document).keypress(function(event) {
-//  info(event.keyCode);
+//  info(event);
   switch(event.keyCode)
   {
-    case 37:
-      CanvasActions.map.addX(-8);
+    case 37: // left
+      //CanvasActions.robot.move(-1, 0);
+      CanvasActions.robot.rotate(-1);
       break;
-    case 38:
-      CanvasActions.map.addY(-8);
+    case 38: // down
+//      CanvasActions.robot.move(0, -1);
+      CanvasActions.robot.backward();
       break;
-    case 39:
-      CanvasActions.map.addX(8);
+    case 39: // right
+//      CanvasActions.robot.move(1, 0);
+      CanvasActions.robot.rotate(1);
       break;
-    case 40:
-      CanvasActions.map.addY(8);
+    case 40: // up
+      CanvasActions.robot.forward();
+      break;
+    case 13:  // Enter
+      break;
+    case 0 :
+      switch(event.charCode)
+      {
+        case 119 : // w
+          CanvasActions.robot.forward();
+          break;
+        case 97 : // a
+          CanvasActions.robot.rotate(-1);
+          break;
+        case 115 : // s
+          CanvasActions.robot.backward();
+          break;
+        case 100 : // d
+          CanvasActions.robot.rotate(1);
+          break;
+        case 32 :  // space
+          break;
+        case 101 :  // e
+          CanvasActions.robot.destroyWall();
+          break;
+        case 114 :  // r
+          break;
+        case 102 :  // f
+          break;
+      }
       break;
   }
 });

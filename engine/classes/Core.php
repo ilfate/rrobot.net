@@ -89,7 +89,7 @@ class Core {
 
     self::$request = new Request();
     self::$routing = new Routing(self::$request);
-
+    
     switch (Request::getExecutingMode())
     {
       case Request::EXECUTE_MODE_HTTP : {
