@@ -51,6 +51,7 @@ function F()
   
   this.handlers = {
   'onload' : new Array(),
+  'onafterload' : new Array(),
   'onresize' : new Array(),
   'ajaxonload' : new Array(),
   'ajaxonresize' : new Array(),

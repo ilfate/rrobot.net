@@ -26,6 +26,17 @@ class Controller_GameMap extends Controller {
    * 
    * @return type 
    */
+  public function libCanvas() 
+  {
+    Js::add(Js::C_ONLOAD, 'CanvasActions.init()');
+    return array(
+        'layout' => array('html.tpl', 'head_libCanvas.tpl', 'layout.tpl')
+    );
+  }
+  /**
+   * 
+   * @return type 
+   */
   public function webSocket() 
   {
     Js::add(Js::C_ONLOAD, 'WSwrapper.init("'. substr(HTTP_ROOT, 7, -1) . '/ws'.'")');

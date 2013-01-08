@@ -19,7 +19,7 @@ return array(
 		),
       
     'log_sql' => true,
-    'is_dev'  => false,
+    'is_dev'  => true,
     'logs_path' => '/home/ilfate/www/php/logs/',
     'site_url' => 'rrobot.ru'
       

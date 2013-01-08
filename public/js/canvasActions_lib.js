@@ -4,46 +4,94 @@
  * 2012
  */
 
+new function () {
+  LibCanvas.extract();
+  atom.ImagePreloader.run({ logo: '/files/img/html5-logo.png' },
+    function (images) {
+    var helper, element;
+    helper = new App.Light(new Size(600, 400));
+    element = helper.createImage(
+    new Rectangle(64, 64, 256, 256),
+    images.get('logo')
+    );
+    element.behaviors.get('draggable').start();
+    [element.shape.from, element.shape.to].forEach(function (point) {
+    var vector = helper.createVector(new Circle(point, 5))
+    .setStyle({ fill: 'red' });
+    vector.behaviors.get('draggable').start();
+    });
+  });
+}; 
+/*
 CanvasActions = function() {
   
   this.tick_methods = [];
   this.objects = [];
   this.object_names = [];
   this.stage = {};
-  this.loader = new createjs.PreloadJS();
-  this.assets = [];
-  
+
+  this.libcanvas;
+  this.images;
   
   this.init = function()
   {
-    this.stage = new createjs.Stage("demoCanvas");
-    this.stage.enableMouseOver(10);
-    this.stage.mouseMoveOutside = true;
-    this.container = new createjs.Container();
-    this.width = $('#demoCanvas').width();
-    this.height = $('#demoCanvas').height();
-
-    var manifest = this.getMapManifest();
-    this.loader.loadManifest(manifest);
-  
-    this.loader.onFileLoad = function(event){CanvasActions.handleFileLoad(event)};
-    this.loader.onComplete = function(){CanvasActions.afterLoad()};
-  
-  
-  }
-  
-  this.afterLoad = function()
-  {
-    this.createMap();  
-    this.createRobot();
-    this.createMonster();
+    //this.libcanvas = new LibCanvas('#demoCanvas');
     
-    this.stage.addChild(this.container);  
-    this.stage.update(); 
-    createjs.Ticker.addListener(CanvasActions);
-    createjs.Ticker.setFPS(30); 
-    createjs.Ticker.useRAF = true;
+    LibCanvas.extract();
+    info(atom.ImagePrealoader);
+    new atom.ImagePrealoader({
+//      prefix: '/images/game',
+      images: {
+          'map'           : '/images/game/map.png'
+      },
+      onReady: function (imagePreloader) {info('awd');
+          CanvasActions.afterLoad(imagePreloader)
+      }
+    });
+    info(1);
+    
+    info(atom);
+    info(atom.ImagePrealoader);
+    atom.ImagePrealoader.run({ unit: '/images/game/map.png' }, function (preloader) {
+      alert(1);
+    });
+    info(2);
+//    this.stage = new createjs.Stage("demoCanvas");
+//    this.stage.enableMouseOver(10);
+//    this.stage.mouseMoveOutside = true;
+//    this.container = new createjs.Container();
+//    this.width = $('#demoCanvas').width();
+//    this.height = $('#demoCanvas').height();
+
+//    var manifest = this.getMapManifest();
+//    this.loader.loadManifest(manifest);
+  
+//    this.loader.onFileLoad = function(event){CanvasActions.handleFileLoad(event)};
+//    this.loader.onComplete = function(){CanvasActions.afterLoad()};
+  
+  
   }
+  
+  this.afterLoad = function(imagePreloader)
+  {
+    this.images = imagePreloader;
+    info('a');
+//    this.createMap();  
+//    this.createRobot();
+    
+//    this.stage.addChild(this.container);  
+//    this.stage.update(); 
+//    createjs.Ticker.addListener(CanvasActions);
+//    createjs.Ticker.setFPS(30); 
+//    createjs.Ticker.useRAF = true;
+  }
+}
+
+CanvasActions = new CanvasActions();
+ /**
+  * 
+ 
+  
   
   this.getMapManifest = function() 
   {
@@ -80,22 +128,6 @@ CanvasActions = function() {
       CanvasActions.robot.draw();
     });
     this.container.addChild(robot_container);
-  }
-  
-  this.createMonster = function()
-  {
-    var monster_container = new createjs.Container();
-    var monster = new IL.Monster(monster_container, this.map);
-    //this.robot.draw();
-    this.map.bindObject(monster);
-    var name = "monster_" + this.objects.length;
-    monster.setName(name);
-    monster.draw();
-    this.addObject(monster, name);
-    this.addTick(function(elapsedTime){
-      CanvasActions.getObject(name).draw();
-    });
-    this.container.addChild(monster_container);
   }
   
   this.circle_t = function () {
@@ -240,32 +272,36 @@ IL.Map = function(container)
     var x = 0;
     var y = 0;
     switch(type) {
-      case "floor":x = 0;y = 0;break;
-      case "wall":x = 8;y = 5;break;      
-      case "wall_d1_1":x = 9;y = 6;break; 
-      case "wall_d1_2":x = 0;y = 7;break; 
-      case "wall_d1_3":x = 1;y = 7;break; 
-      case "wall_d1_4":x = 2;y = 7;break; 
-      case "wall_d2_1":x = 3;y = 7;break; 
-      case "wall_d2_2":x = 4;y = 7;break; 
-      case "wall_d2_3":x = 5;y = 7;break; 
-      case "wall_d2_4":x = 6;y = 7;break; 
-      case "wall_d3_1":x = 7;y = 7;break; 
-      case "wall_d3_2":x = 8;y = 7;break; 
-      case "wall_d3_3":x = 9;y = 7;break; 
-      case "wall_d3_4":x = 0;y = 8;break; 
-      
-      case "floor_d":x = 0;y = 1;break;
-      case "floor_1":x = 2;y = 1;break;
-      case "floor_2":x = 7;y = 0;break;
-      case "floor_3":x = 3;y = 1;break;
-      case "floor_4":x = 1;y = 1;break;
-      
-      case "monst_1":x = 1;y = 8;break; 
-      case "monst_2":x = 2;y = 8;break; 
-      case "monst_3":x = 3;y = 8;break; 
-      case "monst_4":x = 4;y = 8;break; 
-      case "monst_5":x = 5;y = 8;break; 
+      case  "floor" :
+        x = 0;y = 0;
+      break;
+      case  "wall" :
+        x = 8;y = 5;
+      break;
+      case  "wall_d1" :
+        x = 7;y = 5;
+      break;
+      case  "wall_d2" :
+        x = 6;y = 6;
+      break;
+      case  "wall_d3" :
+        x = 6;y = 5;
+      break;
+      case  "floor_d" :
+        x = 0;y = 1;
+      break;
+      case  "floor_1" :
+        x = 2;y = 1;
+      break;
+      case  "floor_2" :
+        x = 7;y = 0;
+      break;
+      case  "floor_3" :
+        x = 3;y = 1;
+      break;
+      case  "floor_4" :
+        x = 1;y = 1;
+      break;
     }
     return {"x": x*this.cell_width,"y":y*this.cell_width};
   }
@@ -273,7 +309,7 @@ IL.Map = function(container)
   this.addCell = function(Cell)
   {
     this.cells.push(Cell);
-    var name = Cell.point.x + '_' + Cell.point.y;
+    var name = Cell.Point.x + '_' + Cell.Point.y;
     this.cell_idx.push(name);
   }
   this.addSimpleCell = function(x, y, type) {
@@ -295,104 +331,6 @@ IL.Map = function(container)
     if(idx != -1) {
       this.cell_idx[idx] = '';
     }
-  }
-  this.createPath = function(from, to) {
-//    info('CreatePath');
-    var matrix = [], // двумерная матрица для хранения клеток
-      route = {}; // объект для хранения инфы о найденном пути 
-      
-      matrix.opened = []; // открытый список, содержащий клетки, которые должны пройти проверку в последующей итерации цикла
-      matrix.closed = []; // закрытый список, отработанные клетки волны, с ними уже ничего не делаем
-      matrix.linear = []; // массив всех клеток матрицы в виде одномерного массива 
-      
-      var start_cell = this.getCell(from.x, from.y);
-      start_cell.closed = false;
-      start_cell.opened = true;
-      start_cell.cost = 0;
-      matrix.opened.push(start_cell);
-      var cell, iter = 0, done = false;
-      
-      while( (cell = matrix.opened.shift()) && iter < 2000 && !done )
-      {
-        matrix.closed.push(cell);
-        cell.closed = true;
-        var
-          top = this.getCell(cell.point.x, cell.point.y - 1),
-          bottom = this.getCell(cell.point.x, cell.point.y + 1),
-          left = this.getCell(cell.point.x - 1, cell.point.y),
-          right = this.getCell(cell.point.x + 1, cell.point.y);
-        var arr = [top,bottom,left,right];
-        for(var i in arr) {
-          if(arr[i] && !arr[i].closed) 
-          {
-            if(arr[i].point.x == to.x && arr[i].point.y == to.y)
-            {
-              arr[i].parent = cell;
-              done = arr[i];
-              
-              break;
-            }
-            if(!arr[i].opened && arr[i].isPassable())
-            {
-              arr[i].opened = true;
-              arr[i].parent = cell;
-              arr[i].cost = function( type )
-              {
-                var
-                  G = ((this.parent.cost && this.parent.cost('g')) || 0) + 10,
-                  H = (Math.abs(this.x - to.x)) + (Math.abs(this.y - to.y));
-                return (
-                  type == 'g' ? G :
-                  type == 'h' ? H :
-                  G + H
-                );
-              } 
-              matrix.opened.push(arr[i]);
-            }
-          }
-        }
-        iter++;
-      }
-      for(var n in matrix.closed) {
-        matrix.closed[n].opened = false;
-        matrix.closed[n].closed = false;
-        matrix.closed[n].cost = 0;
-      }
-      for(var n1 in matrix.opened) {
-        matrix.opened[n1].opened = false;
-        matrix.opened[n1].closed = false;
-        matrix.opened[n1].cost = 0;
-      }
-      if(done)
-      {
-        done.opened = false;
-        done.closed = false;
-        done.cost = 0;
-        var  path = [];
-        if(done.point.x == from.x && done.point.y == from.y) {
-          return path;
-        }
-        var next = done.parent;
-        while(1)
-        {
-          if(next.point.x == from.x && next.point.y == from.y)
-          {
-            return path;
-          }
-          path.push(next);
-          if(next.parent) {
-            next = next.parent;
-          } else {
-            info('error at CreatePath. BackPath');
-            break;
-          }
-        }
-      } else {
-        info(matrix.opened);
-        info("closed =");
-        info(matrix.closed);
-        return false;
-      }
   }
   this.cells_options = [
     "floor", "floor", "floor", "floor", 
@@ -542,8 +480,6 @@ IL.Robot = function(container, map)
     var cell = this.map.getCell(this.point.x + x, this.point.y + y);
     if(cell.isPassable()) 
     {
-      cell.take();
-      this.map.getCell(this.point.x, this.point.y).free();
       this.animation.setStart(new IL.Point(this.point.x * this.map.cell_width, this.point.y * this.map.cell_width));
       this.point.x += x;
       this.point.y += y;
@@ -628,7 +564,7 @@ IL.Robot = function(container, map)
       cell.runAnimation("destroyWall");
       this.animation
         .setType("wait")
-        .setSpeed(400)
+        .setSpeed(1000)
         .start();
       this.map.update();
     }
@@ -666,205 +602,6 @@ IL.Robot = function(container, map)
       
       this.container.addChild(this.img);
       if(!this.animation.isRunning()) {
-        this.needDraw = false;
-      }
-    }
-  }
-  this.update = function()
-  {
-    this.needDraw = true;
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////   MONSTER    /////////////
-////////////////////////////////////////////////////////////////////////////////
-
-IL.Monster = function(container, map)
-{
-  this.container = container;
-  this.map = map;
-  this.direction = 0;
-  this.type = "crab";
-  this.name = "";
-  this.needDraw = true;
-  this.spawn_radius = 0;
-  this.spawn = new IL.Point(0, 1);
-  this.point = new IL.Point(0, 0);
-  this.sprite = new IL.Point(0, 0);
-  this.path = false;
-  this.no_path = false;
-  this.target = false;
-  this.target_point = new IL.Point(0, 0);
-  this.spawned = false;
-  this.animationMove = new IL.Animation("move");
-  this.animation = new IL.Animation("spriteAnimation");
-  this.animation
-    .setSpeed(1000)
-    .setStart(["monst_1", "monst_2", "monst_3", "monst_4", "monst_5", "monst_4", "monst_3", "monst_2"])
-    .start(true);
-  this.container.x = this.map.container.x + this.map.cell_width / 2;
-  this.container.y = this.map.container.y + this.map.cell_width / 2;
-  
-  this.img =  new createjs.Bitmap(CanvasActions.getObject("map"));
-  this.img.sourceRect = new createjs.Rectangle(1 * this.map.cell_width, 8 * this.map.cell_width, this.map.cell_width, this.map.cell_width);
-  this.img.regX = this.map.cell_width / 2;
-  this.img.regY = this.map.cell_width / 2;
-  
-  this.setName = function(name) {
-    this.name = name;
-  }
-  this.doSpawn = function()
-  {
-    if(this.spawn_radius > 0) {
-      var x = this.spawn.x + Math.floor(Math.random() * this.spawn_radius) * (Math.random() > 0.5 ? 1 : -1);
-      var y = this.spawn.y + Math.floor(Math.random() * this.spawn_radius) * (Math.random() > 0.5 ? 1 : -1);
-    } else {
-      var x = this.spawn.x;
-      var y = this.spawn.y;
-    }
-    this.point.set(x, y);
-    this.spawned = true;
-  }
-  this.doSpawn();
-  
-  this.move = function()
-  {
-    if(this.animationMove.isRunning()) return false;
-    var next = this.point.next(this.direction);
-    var cell = this.map.getCell(next.x, next.y);
-    if(cell.isPassable()) 
-    {
-      cell.take();
-      this.map.getCell(this.point.x, this.point.y).free();
-      this.animationMove.setStart(new IL.Point(this.point.x * this.map.cell_width, this.point.y * this.map.cell_width));
-      this.point = next;
-      this.animationMove
-        .setEnd(new IL.Point(this.point.x * this.map.cell_width, this.point.y * this.map.cell_width))
-        .setSpeed(850)
-        .setType("move")
-        .start();
-      this.update();
-    }
-    return this;
-  }
-  this.rotate = function(side)
-  {
-    if(this.animationMove.isRunning()) return false;
-    this.animationMove.setStart(this.img.rotation);
-    if(side > 0) {
-      this.direction++;
-      if(this.direction > 3) {
-        this.direction = 0;
-        this.animationMove.setStart(-90);
-      }
-    }
-    if(side < 0) {
-      this.direction--;
-      if(this.direction < 0) {
-        this.direction = 3;
-        this.animationMove.setStart(360);
-      }
-    }
-    this.animationMove
-      .setType("rotate")
-      .setSpeed(350)
-      .setEnd(90 * this.direction)
-      .start();
-    this.needDraw = true;
-    
-    return this;
-  }
-  this.getPosition = function()
-  {
-    if(this.animationMove.isRunning() && this.animationMove.isType("move"))
-    {
-//      nfo(this.animationMove.getLast().x + ", " + this.animation.getLast().y);
-      return this.animationMove.getLast();
-    } else {
-      return new IL.Point(this.point.x * this.map.cell_width, this.point.y * this.map.cell_width);
-    }
-  }
-  this.checkAngle = function()
-  {
-    if(this.animationMove.isRunning() && this.animationMove.isType("rotate")) {
-        this.img.rotation = this.animationMove.getLast();
-    } else {
-      this.img.rotation = 90 * this.direction;
-    }
-  }
-  this.setType = function(type)
-  {
-    this.type = type;
-    this.sprite = CanvasActions.map.getSpriteType(type);
-  }
-  this.findTarget = function() {
-    this.target = CanvasActions.robot;
-  }
-  this.action = function()
-  {
-    if(this.animationMove.isRunning()) {
-      return;
-    }
-    if(!this.target) {
-      this.findTarget();
-    }
-    if((!this.path && !this.no_path) || this.target.point.x != this.target_point.x || this.target.point.y != this.target_point.y)
-    {
-      this.path = this.map.createPath(this.point, this.target.point);
-      this.target_point.set(this.target.point.x, this.target.point.y);
-//      info(this.path);
-      this.no_path = !this.path;
-      
-    }
-    if(this.path && this.path.length > 0) 
-    { 
-        var target = this.path[this.path.length-1].point;
-        
-        var next_strate = this.point.next(this.direction);
-        if(next_strate.x == target.x && next_strate.y == target.y) {
-          this.move();
-          this.path.pop();
-        } else {
-          var right_dir = this.direction + 1;
-          if(right_dir > 3) right_dir = 0;
-//          info(right_dir);
-          var next_right = this.point.next(right_dir);
-          if(next_right.x == target.x && next_right.y == target.y) {
-            this.rotate(1);
-          } else {
-            this.rotate(-1);
-          }
-        }
-    }
-    
-  }
-  this.draw = function()
-  {
-    if(this.needDraw)
-    {
-      this.action();
-      if(this.animationMove.isRunning()) {
-        this.animationMove.tic();
-      }
-      this.setType(this.animation.tic());
-      
-      
-      this.container.removeAllChildren();
-      var position = this.getPosition();
-      this.checkAngle();
-      
-      var cell = this.map.getCell(this.point.x, this.point.y);
-      
-      this.img.x = -this.map.camera.x + position.x + cell.cutLeft;
-      this.img.y = -this.map.camera.y + position.y + cell.cutTop;
-      this.img.sourceRect.x = this.sprite.x + cell.cutLeft;
-      this.img.sourceRect.y = this.sprite.y + cell.cutTop;
-      this.img.sourceRect.width = this.map.cell_width - cell.cutLeft - cell.cutRight;
-      this.img.sourceRect.height = this.map.cell_width - cell.cutTop - cell.cutBottom;
-//      info(this.img.x + ", " + this.img.y);
-      this.container.addChild(this.img);
-      if(!this.animation.isRunning() && ! this.animationMove.isRunning()) {
         this.needDraw = false;
       }
     }
@@ -923,12 +660,11 @@ IL.Cell = function(Point, type)
   this.cutRight = 0;
   this.cutTop = 0;
   this.cutBottom = 0;
-  this.taken = false;
   
   this.newType = true;
   if(Point) 
   {
-    this.point = Point;
+    this.Point = Point;
   } else {
     info('error. Cell needs a Point object')
   }
@@ -937,32 +673,22 @@ IL.Cell = function(Point, type)
   {
     this.type = type;
     this.sprite = CanvasActions.map.getSpriteType(type);
-    return this;
   }
   this.setType(type);
   
   this.runAnimation = function(name)
   {
     this.animation = new IL.Animation("spriteAnimation");
-    var anims = [
-      ["wall_d1_1", "wall_d1_2", "wall_d1_3", "wall_d1_4", "floor"],
-      ["wall_d2_1", "wall_d2_2", "wall_d2_3", "wall_d2_4", "floor"],
-      ["wall_d3_1", "wall_d3_2", "wall_d3_3", "wall_d3_4", "floor"]
-    ];
-    var rand = Math.floor(Math.random() * anims.length);
-    if(rand == anims.length) rand--;
     this.animation
-      .setSpeed(700)
-      .setStart(anims[rand])
+      .setSpeed(1000)
+      .setStart(["wall_d1", "wall_d2", "wall_d3", "floor"])
       .start()
-    return this;
   }
   this.set = function(x, y)
   {
     this.window_point.x = x;
     this.window_point.y = y;
     this.visible = true;
-    return this;
   }
   this.cutX = function(cut) {
 	  if(cut < 0) {
@@ -974,7 +700,6 @@ IL.Cell = function(Point, type)
 	  } else {
 		this.cutRight = this.cutLeft = 0;  
 	  }
-    return this;
   }
   this.cutY = function(cut) {
 	  if(cut < 0) {
@@ -986,26 +711,16 @@ IL.Cell = function(Point, type)
 	  } else {
 		this.cutTop = this.cutBottom = 0;  
 	  }
-    return this;
   }
   
   this.isPassable = function()
   {
-    if(this.type == "wall" || this.type == "hole" || this.taken) {
+    if(this.type == "wall" || this.type == "hole") {
       return false;
     }
     return true;
   }
-  this.take = function()
-  {
-    this.taken = true;
-    return this;
-  }
-  this.free = function()
-  {
-    this.taken = false;
-    return this;
-  }
+  
   
   this.draw = function(container, width) 
   {
@@ -1046,7 +761,6 @@ IL.Animation = function(type)
   this.started = false;
   this.working = false;
   this.repeat = false;
-  this.repeat_times = -1; // infinite
   this.speed = 0;
   this.start_time = 0;
   this.last_tic = false;
@@ -1105,16 +819,7 @@ IL.Animation = function(type)
     var dT = time - this.start_time;
     if(dT >= this.speed) {
       dT = this.speed;
-      if(!this.repeat) {
-        this.stop();
-      } else {
-        if(this.repeat_times != 0) {
-          this.repeat_times--;
-          this.start(true);
-        } else {
-          this.stop();
-        }
-      }
+      this.stop();
     }
     var k = dT / this.speed;
     switch(this.type) {
@@ -1198,3 +903,5 @@ $(document).keypress(function(event) {
       break;
   }
 });
+
+//*/
